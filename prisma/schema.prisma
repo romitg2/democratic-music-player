@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id             Int                   @id @default(autoincrement())
+  email          String                @unique
+  name           String?
+
+  // Spaces created by the user.
+  spaces         Space[]               @relation("UserSpaces")
+
+  // Streams created by the user.
+  streams        Stream[]              @relation("UserStreams")
+
+  // Upvotes given by the user.
+  upvotes        Upvote[]
+
+  // Private spaces where the user is a member.
+  spaceMembers   SpaceMember[]
+
+  // Access requests for private spaces.
+  accessRequests SpaceAccessRequest[]
+}
+
+model Space {
+  id              Int                   @id @default(autoincrement())
+  title           String
+  createdAt       DateTime              @default(now())
+  // If true, any user can access and create streams;
+  // if false (private), access is controlled.
+  isPublic        Boolean               @default(true)
+  
+  // The owner (creator) of the space.
+  ownerId         Int
+  owner           User                  @relation("UserSpaces", fields: [ownerId], references: [id])
+  // Streams within the space.
+  streams         Stream[]
+
+  // Members allowed to access this space (for private spaces).
+  members         SpaceMember[]
+
+  // Access requests for this space.
+  accessRequests  SpaceAccessRequest[]
+}
+
+model Stream {
+  id         Int       @id @default(autoincrement())
+  title      String
+  content    String?
+  createdAt  DateTime  @default(now())
+  
+  // The space to which this stream belongs.
+  spaceId    Int
+  space      Space     @relation(fields: [spaceId], references: [id])
+  
+  // The user who created the stream.
+  creatorId  Int
+  creator    User      @relation("UserStreams", fields: [creatorId], references: [id])
+  
+  // Upvotes for this stream.
+  upvotes    Upvote[]
+}
+
+model Upvote {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  
+  // The user that upvoted.
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  
+  // The stream that received the upvote.
+  streamId   Int
+  stream     Stream    @relation(fields: [streamId], references: [id])
+  
+  // Ensure a user can upvote a stream only once.
+  @@unique([userId, streamId])
+}
+
+model SpaceMember {
+  id         Int       @id @default(autoincrement())
+  createdAt  DateTime  @default(now())
+  
+  // The private space.
+  spaceId    Int
+  space      Space     @relation(fields: [spaceId], references: [id])
+  
+  // The user granted access.
+  userId     Int
+  user       User      @relation(fields: [userId], references: [id])
+  
+  // The type of access granted.
+  accessType AccessType
+  
+  @@unique([spaceId, userId])
+}
+
+model SpaceAccessRequest {
+  id         Int            @id @default(autoincrement())
+  createdAt  DateTime       @default(now())
+  
+  // The private space for which access is requested.
+  spaceId    Int
+  space      Space          @relation(fields: [spaceId], references: [id])
+  
+  // The user requesting access.
+  userId     Int
+  user       User           @relation(fields: [userId], references: [id])
+  
+  // The status of the request.
+  status     RequestStatus  @default(PENDING)
+  
+  // The type of access requested.
+  accessType AccessType     @default(VIEW)
+
+  @@unique([spaceId, userId])
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AccessType {
+  VIEW
+  EDIT
+}
