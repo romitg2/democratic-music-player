@@ -1,12 +1,12 @@
+'use client';
+
 import Login from "@/app/components/Login";
 import AuthProvider from "./providers/AuthProvider";
+import { useRouter } from "next/navigation";
 
 
 export default function Home() {
-  
-  console.log('.........')
-  console.log(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET)
-  console.log('.........')
+  const router = useRouter();
 
   return (
     <>
@@ -22,6 +22,7 @@ export default function Home() {
         <AuthProvider>
           <Login />
         </AuthProvider>
+        <button className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded" onClick={() => router.push('/spaces', { scroll: false })}>spaces</button>
       </div>
     </>
   );
