@@ -38,6 +38,7 @@ model Space {
   id              Int                   @id @default(autoincrement())
   title           String
   createdAt       DateTime              @default(now())
+  thumbnail       String?
   // If true, any user can access and create streams;
   // if false (private), access is controlled.
   isPublic        Boolean               @default(true)
